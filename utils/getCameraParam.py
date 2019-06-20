@@ -19,3 +19,15 @@ def getCameraParam(colorOrZ='color'):
         cy_d = 2.3844389626620386e+02
         C = np.array([[fx_d, 0, cx_d], [0, fy_d, cy_d], [0, 0, 1]])
     return C
+
+'''
+getCameraParam: get the camera matrix
+colOrZ: color or depth
+'''
+def loadCameraParam(intrinsics_file, shape):
+    if intrinsics_file is not None:
+        C = np.loadtxt(intrinsics_file)
+    else:
+        C = np.array([[600, 0, shape[1]/2.], [0, 600, shape[0]/2.], [0, 0, 1]])
+
+    return C

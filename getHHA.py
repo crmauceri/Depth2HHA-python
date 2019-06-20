@@ -1,18 +1,20 @@
 # --*-- coding:utf-8 --*--
-import math
-import cv2
-import os
-import math
+import cv2, os, math
+import numpy as np
 
-from utils.rgbd_util import *
-from utils.getCameraParam import *
+from utils.rgbd_util import processDepthImage
+from utils.getCameraParam import loadCameraParam
 
 '''
 must use 'COLOR_BGR2GRAY' here, or you will get a different gray-value with what MATLAB gets.
 '''
-def getImage(root='demo'):
-    D = cv2.imread(os.path.join(root, '0.png'), cv2.COLOR_BGR2GRAY)/10000
-    RD = cv2.imread(os.path.join(root, '0_raw.png'), cv2.COLOR_BGR2GRAY)/10000
+def getImage(depth_image, raw_depth_image):
+    D = cv2.imread(depth_image, cv2.COLOR_BGR2GRAY) / 10000
+
+    if raw_depth_image is None:
+        RD = D.copy()
+    else:
+        RD = cv2.imread(raw_depth_image, cv2.COLOR_BGR2GRAY)/10000
     return D, RD
 
 
@@ -60,10 +62,25 @@ def getHHA(C, D, RD):
     return HHA
 
 if __name__ == "__main__":
-    D, RD = getImage()
-    camera_matrix = getCameraParam('color')
-    print('max gray value: ', np.max(D))        # make sure that the image is in 'meter'
+    import argparse
+
+    parser = argparse.ArgumentParser(description='HHA from Depth Image')
+    parser.add_argument('output_dir', type=str, help='HHA image saved here')
+    parser.add_argument('depth_image', type=str,
+                        help='path to smoothed depth image')
+    parser.add_argument('--raw_depth_image', type=str, default=None,
+                        help='path to unprocessed depth image')
+    parser.add_argument('--camera_matrix', type=str, default=None,
+                        help='path to camera matrix')
+
+    args = parser.parse_args()
+
+    D, RD = getImage(args.depth_image, args.raw_depth_image)
+    # camera_matrix = getCameraParam()
+    camera_matrix = loadCameraParam(args.camera_matrix, D.shape)
+    # print('max gray value: ', np.max(D))        # make sure that the image is in 'meter'
     hha = getHHA(camera_matrix, D, RD)
-    hha_complete = getHHA(camera_matrix, D, D)
-    cv2.imwrite('demo/hha.png', hha)
-    cv2.imwrite('demo/hha_complete.png', hha_complete)
+
+    head, tail = os.path.split(args.depth_image)
+    tail, ext = os.path.splitext(tail)
+    cv2.imwrite(os.path.join(args.output_dir, tail + '.png'), hha)
