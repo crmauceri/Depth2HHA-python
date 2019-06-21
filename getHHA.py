@@ -91,10 +91,10 @@ if __name__ == "__main__":
 
     #MSCOCO
     if args.input_dir is not None:
-        processed = [os.path.splitext(f)[0] for f in os.path.listdir(args.output_dir)]
-        unprocessed = [f for f in os.path.listdir(args.input_dir) if os.path.splitext(f)[0] not in processed]
+        processed = [os.path.splitext(f)[0] for f in os.listdir(args.output_dir)]
+        unprocessed = [f for f in os.listdir(args.input_dir) if os.path.splitext(f)[0] not in processed]
         for f in tqdm(unprocessed):
-            fpath = os.join(args.input_dir, f)
+            fpath = os.path.join(args.input_dir, f)
             saveHHA(fpath, None, None, args.output_dir)
     #SUNRGBD
     elif args.depth_image is not None:
