@@ -3,7 +3,7 @@ import cv2, math, os
 from tqdm import tqdm
 import numpy as np
 
-from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing import Pool
 from utils.rgbd_util import processDepthImage
 from utils.getCameraParam import loadCameraParam
 
@@ -104,8 +104,8 @@ if __name__ == "__main__":
         unprocessed = [os.path.join(args.input_dir, f) for f in os.listdir(args.input_dir) if os.path.splitext(f)[0] not in processed]
 
         C = Consumer(args.output_dir)
-        pool = ThreadPool(4)
-        for _ in tqdm.tqdm(pool.imap(C.processDepthImage, unprocessed), total=len(unprocessed)):
+        pool = Pool(4)
+        for _ in tqdm(pool.imap_unordered(C.processDepthImage, unprocessed), total=len(unprocessed)):
             pass
         pool.close()
         pool.join()
