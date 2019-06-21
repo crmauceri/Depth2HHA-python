@@ -79,7 +79,7 @@ class Consumer:
 
     def processDepthImage(self, depthPath):
         saveHHA(depthPath, None, None, self.output_dir)
-        print(depthPath)
+        #print(depthPath)
 
 
 if __name__ == "__main__":
@@ -105,7 +105,8 @@ if __name__ == "__main__":
 
         C = Consumer(args.output_dir)
         pool = ThreadPool(4)
-        pool.map(C.processDepthImage(), unprocessed)
+        for _ in tqdm.tqdm(pool.imap(C.processDepthImage, unprocessed), total=len(unprocessed)):
+            pass
         pool.close()
         pool.join()
 
