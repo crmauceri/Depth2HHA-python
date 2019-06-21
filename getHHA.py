@@ -1,5 +1,6 @@
 # --*-- coding:utf-8 --*--
-import cv2, os, math
+import cv2, math, os
+from tqdm import tqdm
 import numpy as np
 
 from utils.rgbd_util import processDepthImage
@@ -61,26 +62,40 @@ def getHHA(C, D, RD):
     HHA = I.astype(np.uint8)
     return HHA
 
+def saveHHA(depth, rawDepth, cameraMatrix, outputDir):
+    D, RD = getImage(depth, rawDepth)
+    camera_matrix = loadCameraParam(cameraMatrix, D.shape)
+    # print('max gray value: ', np.max(D))        # make sure that the image is in 'meter'
+    hha = getHHA(camera_matrix, D, RD)
+
+    head, tail = os.path.split(depth)
+    tail, ext = os.path.splitext(tail)
+    cv2.imwrite(os.path.join(outputDir, tail + '.png'), hha)
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description='HHA from Depth Image')
     parser.add_argument('output_dir', type=str, help='HHA image saved here')
-    parser.add_argument('depth_image', type=str,
+    parser.add_argument('--depth_image', type=str, default=None,
                         help='path to smoothed depth image')
-    parser.add_argument('--raw_depth_image', type=str, default=None,
+    parser.add_argument('--raw_image', type=str, default=None,
                         help='path to unprocessed depth image')
+    parser.add_argument('--input_dir', type=str, default=None,
+                        help='directory containing smoothed depth images')
     parser.add_argument('--camera_matrix', type=str, default=None,
                         help='path to camera matrix')
 
     args = parser.parse_args()
 
-    D, RD = getImage(args.depth_image, args.raw_depth_image)
-    # camera_matrix = getCameraParam()
-    camera_matrix = loadCameraParam(args.camera_matrix, D.shape)
-    # print('max gray value: ', np.max(D))        # make sure that the image is in 'meter'
-    hha = getHHA(camera_matrix, D, RD)
-
-    head, tail = os.path.split(args.depth_image)
-    tail, ext = os.path.splitext(tail)
-    cv2.imwrite(os.path.join(args.output_dir, tail + '.png'), hha)
+    #MSCOCO
+    if args.input_dir is not None:
+        processed = [os.path.splitext(f)[0] for f in os.path.listdir(args.output_dir)]
+        unprocessed = [f for f in os.path.listdir(args.input_dir) if os.path.splitext(f)[0] not in processed]
+        for f in tqdm(unprocessed):
+            fpath = os.join(args.input_dir, f)
+            saveHHA(fpath, None, None, args.output_dir)
+    #SUNRGBD
+    elif args.depth_image is not None:
+        saveHHA(args.depth_image, args.raw_image, args.camera_matrix, args.output_dir)
